@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>투표하기 - 경기대 투표</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="./js/web3.min.js"></script>
+    <script src="./js/abi.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+        .card-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 1rem;
+        }
+        .card {
+            flex: 1 1 calc(25% - 1rem);
+            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+        }
+        .card img {
+            width: 100%;
+            height: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-5">
+        <h1 class="text-center">투표하기</h1>
+        <div class="box-body">
+            <div class="col-12 py-3">
+                <span class="form-control" id="resultbrowsers">메타마스크를 로그인 해주세요!</span>
+            </div>
+            <div class="input-group mb-3">
+                <div class="input-group-prepend">
+                    <span class="input-group-text">계정</span>
+                </div>
+                <span class="form-control" id="showAccount"></span>
+            </div>
+            
+            <h2 class="text-center mt-4">등록된 투표 세션</h2>
+            <form id="selectSessionForm">
+                <div id="sessionList" class="list-group mb-4">
+                    <!-- 투표 세션 목록이 여기에 표시됩니다 -->
+                </div>
+                <button type="submit" class="btn btn-primary">세션 선택</button>
+            </form>
+            
+            <h2 class="text-center mt-4">후보자 목록</h2>
+            <form id="voteForm">
+                <div id="candidateList" class="card-container">
+                    <!-- 후보자 목록이 여기에 표시됩니다 -->
+                </div>
+                <button type="submit" class="btn btn-primary mt-4">투표</button>
+            </form>
+            <div id="alreadyVotedMessage" class="text-danger mt-4" style="display: none;">
+                이미 투표를 완료하셨습니다.
+            </div>
+            <div class="d-flex justify-content-between mt-4">
+                <button id="logoutBtn" class="btn btn-secondary">로그아웃</button>
+                <button id="mainPageButton" class="btn btn-secondary">메인 페이지로 이동</button>
+            </div>
+        </div>
+        
+        <div class="container mt-5">
+            <h1 class="text-center">투표 결과</h1>
+            <h2 class="text-center mt-4">후보자 투표 결과</h2>
+            <div id="votingResult" class="list-group mb-4">
+                <!-- 투표 결과가 여기에 표시됩니다 -->
+            </div>
+            <canvas id="voteResultsChart"></canvas>
+        </div>
+    </div>
+
+    <footer class="footer mt-5"></footer>
+
+    <script>
+        $(document).ready(function () {
+            const loggedInUser = JSON.parse(sessionStorage.getItem("loggedInUser"));
+            if (!loggedInUser) {
+                alert("로그인 후 이용해주세요.");
+                window.location.href = "login.html";
+                return;
+            }
+
+            let voteResultsChart;  // 차트 변수
+
+            $("#logoutBtn").click(function () {
+                sessionStorage.removeItem("loggedInUser");
+                window.location.href = "login.html";
+            });
+
+            $("#mainPageButton").click(function () {
+                window.location.href = "index.html";
+            });
+
+            async function loadSessions() {
+                if (typeof web3 !== "undefined" && web3.currentProvider.isMetaMask) {
+                    const accounts = await ethereum.request({ method: "eth_requestAccounts" });
+                    window.web3 = new Web3(window.ethereum);
+                    const votingContract = new window.web3.eth.Contract(abiobj, contractAddress);
+        
+                    try {
+                        const sessionCount = await votingContract.methods.getSessionCount().call();
+                        const sessionList = $("#sessionList");
+                        sessionList.empty();
+        
+                        for (let i = 0; i < sessionCount; i++) {
+                            const session = await votingContract.methods.getSession(i).call();
+                            const sessionItem = `<div class="list-group-item"><input type="radio" name="session" value="${i}" id="session${i}"><label for="session${i}"> Session ${i}: ${session[0]} (Active: ${session[1]})</label></div>`;
+                            sessionList.append(sessionItem);
+                        }
+                    } catch (error) {
+                        console.error("Error loading sessions:", error);
+                        alert("투표 세션을 불러오는 중 오류가 발생했습니다.");
+                    }
+                } else {
+                    alert("MetaMask를 사용할 수 없습니다.");
+                }
+            }
+
+            $("#selectSessionForm").submit(async function (e) {
+                e.preventDefault();
+                const selectedSession = $("input[name='session']:checked").val();
+                if (selectedSession !== undefined) {
+                    await loadCandidates(selectedSession);
+                    await loadVotingResults(selectedSession);
+                } else {
+                    alert("세션을 선택해주세요.");
+                }
+            });
+
+            async function loadCandidates(sessionIndex) {
+                if (typeof web3 !== "undefined" && web3.currentProvider.isMetaMask) {
+                    const accounts = await ethereum.request({ method: "eth_requestAccounts" });
+                    window.web3 = new Web3(window.ethereum);
+                    const votingContract = new window.web3.eth.Contract(abiobj, contractAddress);
+
+                    try {
+                        const candidateCount = await votingContract.methods.getCandidateCount(sessionIndex).call();
+                        const candidateList = $("#candidateList");
+                        candidateList.empty();
+
+                        const imageUrl = "./images/candi.png";  // 후보자 이미지 경로
+                        for (let i = 0; i < candidateCount; i++) {
+                            const candidate = await votingContract.methods.getCandidate(sessionIndex, i).call();
+                            const candidateItem = `
+                                <div class="card" style="width: 18rem;">
+                                    <img src="${imageUrl}" class="card-img-top" alt="Candidate Image">
+                                    <div class="card-body">
+                                        <h5 class="card-title">후보자 ${i + 1}</h5>
+                                        <p class="card-text">${candidate[0]}: ${candidate[1]}, ${candidate[2]}</p>
+                                        <input type="radio" name="candidate" value="${i}" id="candidate${i}">
+                                        <label for="candidate${i}" class="btn btn-primary mt-2">Vote</label>
+                                    </div>
+                                </div>`;
+                            candidateList.append(candidateItem);
+                        }
+                    } catch (error) {
+                        console.error("Error loading candidates:", error);
+                        alert("후보자 목록을 불러오는 중 오류가 발생했습니다.");
+                    }
+                } else {
+                    alert("MetaMask를 사용할 수 없습니다.");
+                }
+            }
+
+            async function loadVotingResults(sessionIndex) {
+                if (typeof web3 !== "undefined" && web3.currentProvider.isMetaMask) {
+                    const accounts = await ethereum.request({ method: "eth_requestAccounts" });
+                    window.web3 = new Web3(window.ethereum);
+                    const votingContract = new window.web3.eth.Contract(abiobj, contractAddress);
+
+                    try {
+                        const candidateCount = await votingContract.methods.getCandidateCount(sessionIndex).call();
+                        const votingResult = $("#votingResult");
+                        votingResult.empty();
+
+                        const candidateNames = [];
+                        const voteCounts = [];
+
+                        for (let i = 0; i < candidateCount; i++) {
+                            const candidate = await votingContract.methods.getCandidate(sessionIndex, i).call();
+                            candidateNames.push(candidate[0]);
+                            voteCounts.push(Number(candidate[3])); // BigInt 값을 Number로 변환
+                            const resultItem = `<div class="list-group-item">Candidate ${i}: ${candidate[0]}, ${candidate[1]}, ${candidate[2]}, Votes: ${candidate[3]}</div>`;
+                            votingResult.append(resultItem);
+                        }
+
+                        // 그래프 업데이트
+                        if (voteResultsChart) {
+                            voteResultsChart.destroy();
+                        }
+
+                        const ctx = document.getElementById('voteResultsChart').getContext('2d');
+                        voteResultsChart = new Chart(ctx, {
+                            type: 'bar',
+                            data: {
+                                labels: candidateNames,
+                                datasets: [{
+                                    label: 'Votes',
+                                    data: voteCounts,
+                                    backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                                    borderColor: 'rgba(54, 162, 235, 1)',
+                                    borderWidth: 1
+                                }]
+                            },
+                            options: {
+                                scales: {
+                                    y: {
+                                        beginAtZero: true,
+                                        ticks: {
+                                            callback: function(value) {
+                                                if (Number.isInteger(value)) {
+                                                    return value;
+                                                }
+                                            },
+                                            stepSize: 1  // 자연수 단위로 표시되도록 설정
+                                        }
+                                    }
+                                }
+                            }
+                        });
+                    } catch (error) {
+                        console.error("Error loading voting results:", error);
+                        alert("투표 결과를 불러오는 중 오류가 발생했습니다.");
+                    }
+                } else {
+                    alert("MetaMask를 사용할 수 없습니다.");
+                }
+            }
+
+            $("#voteForm").submit(async function (e) {
+                e.preventDefault();
+                const selectedSession = $("input[name='session']:checked").val();
+                const selectedCandidate = $("input[name='candidate']:checked").val();
+
+                if (selectedSession !== undefined && selectedCandidate !== undefined) {
+                    if (typeof web3 !== "undefined" && web3.currentProvider.isMetaMask) {
+                        const accounts = await ethereum.request({ method: "eth_requestAccounts" });
+                        window.web3 = new Web3(window.ethereum);
+                        const votingContract = new window.web3.eth.Contract(abiobj, contractAddress);
+
+                        try {
+                            await votingContract.methods.vote(selectedSession, selectedCandidate).send({ from: accounts[0] });
+                            alert("투표가 성공적으로 완료되었습니다.");
+                            await loadVotingResults(selectedSession);  // 투표 완료 후 결과 불러오기
+                        } catch (error) {
+                            if (error.code === 4001) {
+                                alert("트랜잭션 서명이 거부되었습니다.");
+                            } else if (error.message.includes("Invalid session index")) {
+                                alert("유효하지 않은 세션 인덱스입니다.");
+                            } else if (error.message.includes("Invalid candidate index")) {
+                                alert("유효하지 않은 후보자 인덱스입니다.");
+                            } else if (error.message.includes("Voting session is not active")) {
+                                alert("투표 세션이 활성화되지 않았습니다.");
+                            } else if (error.message.includes("You have already voted in this session")) {
+                                alert("이미 해당 세션에서 투표하셨습니다.");
+                            } else {
+                                console.error("Error voting:", error);
+                                alert("투표 중 오류가 발생했습니다.");
+                            }
+                        }
+                    } else {
+                        alert("MetaMask를 사용할 수 없습니다.");
+                    }
+                } else {
+                    alert("후보자를 선택해주세요.");
+                }
+            });
+
+            loadSessions();
+        });
+    </script>
+</body>
+</html>

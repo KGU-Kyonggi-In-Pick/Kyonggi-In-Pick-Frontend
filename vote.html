@@ -31,24 +31,13 @@
 </head>
 <body>
     <div class="container mt-5">
-        <h1 class="text-center">투표하기</h1>
+        <h2 class="text-center mt-4">Kyonggi-In-Pick</h2>
         <div class="box-body">
-            <div class="col-12 py-3">
-                <span class="form-control" id="resultbrowsers">메타마스크를 로그인 해주세요!</span>
-            </div>
-            <div class="input-group mb-3">
-                <div class="input-group-prepend">
-                    <span class="input-group-text">계정</span>
-                </div>
-                <span class="form-control" id="showAccount"></span>
-            </div>
-            
-            <h2 class="text-center mt-4">등록된 투표 세션</h2>
             <form id="selectSessionForm">
                 <div id="sessionList" class="list-group mb-4">
                     <!-- 투표 세션 목록이 여기에 표시됩니다 -->
                 </div>
-                <button type="submit" class="btn btn-primary">세션 선택</button>
+                <button type="submit" class="btn btn-primary">확인</button>
             </form>
             
             <h2 class="text-center mt-4">후보자 목록</h2>
@@ -61,19 +50,15 @@
             <div id="alreadyVotedMessage" class="text-danger mt-4" style="display: none;">
                 이미 투표를 완료하셨습니다.
             </div>
-            <div class="d-flex justify-content-between mt-4">
-                <button id="logoutBtn" class="btn btn-secondary">로그아웃</button>
-                <button id="mainPageButton" class="btn btn-secondary">메인 페이지로 이동</button>
-            </div>
         </div>
         
         <div class="container mt-5">
-            <h1 class="text-center">투표 결과</h1>
-            <h2 class="text-center mt-4">후보자 투표 결과</h2>
-            <div id="votingResult" class="list-group mb-4">
-                <!-- 투표 결과가 여기에 표시됩니다 -->
-            </div>
+            
             <canvas id="voteResultsChart"></canvas>
+        </div>
+        <div class="d-flex justify-content-between mt-4">
+            <button id="logoutBtn" class="btn btn-secondary">로그아웃</button>
+            <button id="mainPageButton" class="btn btn-secondary">메인 페이지로 이동</button>
         </div>
     </div>
 
@@ -112,7 +97,7 @@
         
                         for (let i = 0; i < sessionCount; i++) {
                             const session = await votingContract.methods.getSession(i).call();
-                            const sessionItem = `<div class="list-group-item"><input type="radio" name="session" value="${i}" id="session${i}"><label for="session${i}"> Session ${i}: ${session[0]} (Active: ${session[1]})</label></div>`;
+                            const sessionItem = `<div class="list-group-item"><input type="radio" name="session" value="${i}" id="session${i}"><label for="session${i}">&nbsp;${session[0]}</label></div>`;
                             sessionList.append(sessionItem);
                         }
                     } catch (error) {
@@ -153,10 +138,9 @@
                                 <div class="card" style="width: 18rem;">
                                     <img src="${imageUrl}" class="card-img-top" alt="Candidate Image">
                                     <div class="card-body">
-                                        <h5 class="card-title">후보자 ${i + 1}</h5>
-                                        <p class="card-text">${candidate[0]}: ${candidate[1]}, ${candidate[2]}</p>
+                                        <h5 class="card-title">기호 ${i + 1}번</h5>
+                                        <p class="card-text">${candidate[2]} ${candidate[0]}</p>
                                         <input type="radio" name="candidate" value="${i}" id="candidate${i}">
-                                        <label for="candidate${i}" class="btn btn-primary mt-2">Vote</label>
                                     </div>
                                 </div>`;
                             candidateList.append(candidateItem);
@@ -188,7 +172,7 @@
                             const candidate = await votingContract.methods.getCandidate(sessionIndex, i).call();
                             candidateNames.push(candidate[0]);
                             voteCounts.push(Number(candidate[3])); // BigInt 값을 Number로 변환
-                            const resultItem = `<div class="list-group-item">Candidate ${i}: ${candidate[0]}, ${candidate[1]}, ${candidate[2]}, Votes: ${candidate[3]}</div>`;
+                            const resultItem = `<div class="list-group-item"> </div>`;
                             votingResult.append(resultItem);
                         }
 

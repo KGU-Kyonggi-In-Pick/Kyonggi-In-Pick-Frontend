@@ -112,10 +112,47 @@
             $("#selectSessionForm").submit(async function (e) {
                 e.preventDefault();
                 const selectedSession = $("input[name='session']:checked").val();
+                const accounts = await ethereum.request({ method: "eth_requestAccounts" });
+                window.web3 = new Web3(window.ethereum);
+                const votingContract = new window.web3.eth.Contract(abiobj, contractAddress);
+
+                //투표여부확인
+                async function checkIfUserVoted(sessionIndex) {
+                    try {
+                        const events = await votingContract.getPastEvents('Voted', {
+                            filter: {sessionIndex: sessionIndex},
+                            fromBlock: 0,
+                            toBlock: 'latest'
+                        });
+                        
+                        for (let event of events) {
+                            const transaction = await web3.eth.getTransaction(event.transactionHash);
+                            if (transaction.from.toLowerCase() === accounts[0].toLowerCase()){
+                                return true;
+                            }
+
+                        }
+                        return false;
+                    } catch (error) {
+                        console.error("Error checking if user voted:", error);
+                        return false;
+                    }
+    
+                }
+
+                //세션선택
                 if (selectedSession !== undefined) {
-                    await loadCandidates(selectedSession);
-                    await loadVotingResults(selectedSession);
-                } else {
+                    const userVoted = await checkIfUserVoted(selectedSession);
+                    if (userVoted) {
+                        alert("이미 투표하신 세션입니다.");
+                        $("#candidateList").fadeOut();
+                        await loadVotingResults(selectedSession); 
+                        $("#alreadyVotedMessage").show();
+                    } else {
+                        await loadCandidates(selectedSession);
+                        await loadVotingResults(selectedSession);
+                    }
+                }else {
                     alert("세션을 선택해주세요.");
                 }
             });
@@ -235,7 +272,7 @@
                             alert("투표가 성공적으로 완료되었습니다.");
                             await loadVotingResults(selectedSession);  // 투표 완료 후 결과 불러오기
                         } catch (error) {
-                            if (error.code === 4001) {
+                            if (error.message.includes("User denied transaction signature")) {
                                 alert("트랜잭션 서명이 거부되었습니다.");
                             } else if (error.message.includes("Invalid session index")) {
                                 alert("유효하지 않은 세션 인덱스입니다.");
@@ -248,7 +285,7 @@
                             } else {
                                 console.error("Error voting:", error);
                                 alert("투표 중 오류가 발생했습니다.");
-                            }
+                            } 
                         }
                     } else {
                         alert("MetaMask를 사용할 수 없습니다.");

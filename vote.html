@@ -4,7 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>투표하기 - 경기대 투표</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link
+    rel="stylesheet"
+    href="https://bootswatch.com/5/sketchy/bootstrap.min.css"
+  />
+  <link rel="stylesheet" href="style.css" />
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="./js/web3.min.js"></script>
     <script src="./js/abi.js"></script>
@@ -37,15 +41,15 @@
                 <div id="sessionList" class="list-group mb-4">
                     <!-- 투표 세션 목록이 여기에 표시됩니다 -->
                 </div>
-                <button type="submit" class="btn btn-primary">확인</button>
+                <button type="submit" class="btn btn-outline-info">확인</button>
             </form>
             
-            <h2 class="text-center mt-4">후보자 목록</h2>
+            <h2 class="text-center mt-4">Candidate</h2>
             <form id="voteForm">
                 <div id="candidateList" class="card-container">
                     <!-- 후보자 목록이 여기에 표시됩니다 -->
                 </div>
-                <button type="submit" class="btn btn-primary mt-4">투표</button>
+                <button type="submit" class="btn btn-outline-info mt-4">투표</button>
             </form>
             <div id="alreadyVotedMessage" class="text-danger mt-4" style="display: none;">
                 이미 투표를 완료하셨습니다.
@@ -57,8 +61,8 @@
             <canvas id="voteResultsChart"></canvas>
         </div>
         <div class="d-flex justify-content-between mt-4">
-            <button id="logoutBtn" class="btn btn-secondary">로그아웃</button>
-            <button id="mainPageButton" class="btn btn-secondary">메인 페이지로 이동</button>
+            <button id="mainPageButton" class="btn btn-success">메인 페이지로 이동</button>
+            <button id="logoutBtn" class="btn btn-danger">로그아웃</button>
         </div>
     </div>
 
@@ -175,7 +179,7 @@
                                 <div class="card" style="width: 18rem;">
                                     <img src="${imageUrl}" class="card-img-top" alt="Candidate Image">
                                     <div class="card-body">
-                                        <h5 class="card-title">기호 ${i + 1}번</h5>
+                                        <h5 class="card-title">No.${i + 1}</h5>
                                         <p class="card-text">${candidate[2]} ${candidate[0]}</p>
                                         <input type="radio" name="candidate" value="${i}" id="candidate${i}">
                                     </div>

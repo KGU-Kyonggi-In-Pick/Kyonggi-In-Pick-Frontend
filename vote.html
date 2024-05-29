@@ -34,7 +34,7 @@
         .list-group-item { /* GPT 리스트버튼 수정 */
             cursor: pointer;
         }
-        #sessionList, #candidateList {
+        #sessionList {
             max-height: 300px; /* 원하는 최대 높이 설정 */
             overflow-y: auto; /* 세로 스크롤 활성화 */
         }
@@ -48,7 +48,9 @@
                 <div id="sessionList" class="list-group mb-4">
                     <!-- 투표 세션 목록이 여기에 표시됩니다 -->
                 </div>
+                <div class = "text-center">
                 <button type="submit" class="btn btn-outline-info">확인</button>
+                </div>
             </form>
             
             <div id="candidateSection" style="display:none;">
@@ -57,7 +59,9 @@
                     <div id="candidateList" class="card-container">
                         <!-- 후보자 목록이 여기에 표시됩니다 -->
                     </div>
+                    <div class = "text-center">
                     <button type="submit" class="btn btn-outline-info mt-4">투표</button>
+                    </div>
                 </form>
             </div>
             

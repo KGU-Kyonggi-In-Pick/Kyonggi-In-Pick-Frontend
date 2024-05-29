@@ -28,7 +28,7 @@
             </div> -->
             <h2 class="bd-title text-center" style="margin-top: 30px"></h2>
             <form id="addSessionForm">
-                <div class="mb-3">
+                <div class="mb-2">
                     <label for="sessionName" class="form-label">세션 이름</label>
                     <input type="text" class="form-control" id="sessionName" required />
                 </div>
@@ -36,21 +36,21 @@
                 <button type="submit" class="btn btn-outline-info">투표 세션 추가</button>
                 </div>
             </form>
-            <h2 class="bd-title text-center" style="margin-top: 30px"></h2>
+            <h2 class="bd-title text-center" style="margin-top: 10px"></h2>
             <form id="addCandidateForm">
-                <div class="mb-3">
+                <div class="mb-2">
                     <label for="candidateName" class="form-label">후보자 이름</label>
                     <input type="text" class="form-control" id="candidateName" required />
                 </div>
-                <div class="mb-3">
+                <div class="mb-2">
                     <label for="candidateStudentId" class="form-label">학번</label>
                     <input type="text" class="form-control" id="candidateStudentId" required />
                 </div>
-                <div class="mb-3">
+                <div class="mb-2">
                     <label for="candidateDepartment" class="form-label">학과</label>
                     <input type="text" class="form-control" id="candidateDepartment" required />
                 </div>
-                <div class="mb-3">
+                <div class="mb-2">
                     <label for="sessionIndex" class="form-label">세션 인덱스</label>
                     <input type="number" class="form-control" id="sessionIndex" required />
                 </div>
@@ -65,8 +65,10 @@
                 </div>
             </div>
             
-            <button id="logoutBtn" class="btn btn-danger" style="margin-top: 20px">로그아웃</button>
+            <div class="d-flex justify-content-between mt-4">
             <button onclick="window.location.href='index.html'" class="btn btn-success" style="margin-top: 20px">메인 페이지로 이동</button>
+            <button id="logoutBtn" class="btn btn-danger" style="margin-top: 20px">로그아웃</button>
+            </div>
         </div>
     </div>
 

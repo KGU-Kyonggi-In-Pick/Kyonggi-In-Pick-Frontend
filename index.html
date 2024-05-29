@@ -3,49 +3,44 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>인덱스 페이지 - 경기대 투표</title>
-    <link
-      rel="stylesheet"
-      href="https://bootswatch.com/5/sketchy/bootstrap.min.css"
-    />
-    <link rel="stylesheet" href="style.css" />
+    <title>투표 결과 - 경기대 투표</title>
+    <link rel="stylesheet" href="https://bootswatch.com/5/sketchy/bootstrap.min.css"/>
+    <link rel="stylesheet" href="style.css"/>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="./js/web3.min.js"></script>
+    <script src="./js/abi.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         body {
             background-color: #f8f9fa;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
         }
-        .container {
-            background-color: #ffffff;
-            padding: 4rem;
-            border-radius: 0.5rem;
-            box-shadow: 0 0.25rem 0.5rem rgba(0, 0, 0, 0.075);
-            text-align: center;
+        .list-group-item {
+            cursor: pointer;
         }
-        .container img {
-            display: block;
-            margin: 0 auto 1rem auto;
-            width: 300px;
+        .list-group-item.active {
+            background-color: #d9edf7;
+            border-color: #bce8f1;
         }
-      .btn-outline-primary,
-      .btn-outline-danger,
-      .btn-outline-success {
-            margin-top: 10px;
+        #sessionList {
+            max-height: 300px; /* 원하는 최대 높이로 설정하세요 */
+            overflow-y: auto;
         }
     </style>
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="./js/userdata.js"></script>
 </head>
 <body>
-    <div class="container">
-        <img src="./images/logo.png" alt="Logo">
-        <!-- <h1 class="mb-4">목록</h1> -->
-        <button class="btn btn-outline-primary w-50" id="votePageButton">투표 페이지로 이동</button>
-        <button class="btn btn-outline-primary w-50" id="voteLogButton">투표 로그 페이지로 이동</button>
-        <button class="btn btn-outline-success w-50" id="addVoteButton" style="display: none;">투표 추가하기</button>
-        <button class="btn btn-outline-danger w-50" id="logoutButton">로그아웃</button>
+    <div class="container mt-5">
+        <h2 class="text-center mt-4">Vote Result</h2>
+        <form id="selectSessionForm">
+            <div id="sessionList" class="list-group mb-4">
+                <!-- 세션 목록이 여기에 표시됩니다 -->
+            </div>
+            <button type="submit" class="btn btn-outline-info">확인</button>
+        </form>
+        <canvas id="voteResultsChart"></canvas>
+        <div class="d-flex justify-content-between mt-4">
+            <button id="mainPageButton" class="btn btn-success">메인 페이지로 이동</button>
+            <button id="logoutBtn" class="btn btn-danger">로그아웃</button>
+        </div>
     </div>
 
     <script>
@@ -57,26 +52,119 @@
                 return;
             }
 
-            if (loggedInUser.studentId === "0000") { // Admin student ID is 0000
-                $("#addVoteButton").show();
-            }
+            let selectedSession = null;
+            let voteResultsChart;  // 차트 변수
 
-            $("#votePageButton").click(function () {
-                window.location.href = "vote.html";
-            });
-
-            $("#voteLogButton").click(function () {
-                window.location.href = "vote_log.html";
-            });
-
-            $("#addVoteButton").click(function () {
-                window.location.href = "admin.html";
-            });
-
-            $("#logoutButton").click(function () {
+            $("#logoutBtn").click(function () {
                 sessionStorage.removeItem("loggedInUser");
                 window.location.href = "login.html";
             });
+
+            $("#mainPageButton").click(function () {
+                window.location.href = "index.html";
+            });
+
+            async function loadSessions() {
+                if (typeof web3 !== "undefined" && web3.currentProvider.isMetaMask) {
+                    const accounts = await ethereum.request({ method: "eth_requestAccounts" });
+                    window.web3 = new Web3(window.ethereum);
+                    const votingContract = new window.web3.eth.Contract(abiobj, contractAddress);
+        
+                    try {
+                        const sessionCount = await votingContract.methods.getSessionCount().call();
+                        const sessionList = $("#sessionList");
+                        sessionList.empty();
+        
+                        for (let i = 0; i < sessionCount; i++) {
+                            const session = await votingContract.methods.getSession(i).call();
+                            const sessionItem = `<div class="list-group-item" data-session-index="${i}">${session[0]}</div>`;
+                            sessionList.append(sessionItem);
+                        }
+
+                        $('.list-group-item').on('click', function () {
+                            $('.list-group-item').removeClass('active');
+                            $(this).addClass('active');
+                            selectedSession = $(this).data('session-index');
+                        });
+                    } catch (error) {
+                        console.error("Error loading sessions:", error);
+                        alert("투표 세션을 불러오는 중 오류가 발생했습니다.");
+                    }
+                } else {
+                    alert("MetaMask를 사용할 수 없습니다.");
+                }
+            }
+
+            async function loadVotingResults(sessionIndex) {
+                if (typeof web3 !== "undefined" && web3.currentProvider.isMetaMask) {
+                    const accounts = await ethereum.request({ method: "eth_requestAccounts" });
+                    window.web3 = new Web3(window.ethereum);
+                    const votingContract = new window.web3.eth.Contract(abiobj, contractAddress);
+
+                    try {
+                        const candidateCount = await votingContract.methods.getCandidateCount(sessionIndex).call();
+                        const candidateNames = [];
+                        const voteCounts = [];
+
+                        for (let i = 0; i < candidateCount; i++) {
+                            const candidate = await votingContract.methods.getCandidate(sessionIndex, i).call();
+                            candidateNames.push(candidate[0]);
+                            voteCounts.push(Number(candidate[3])); // BigInt 값을 Number로 변환
+                        }
+
+                        // 그래프 업데이트
+                        if (voteResultsChart) {
+                            voteResultsChart.destroy();
+                        }
+
+                        const ctx = document.getElementById('voteResultsChart').getContext('2d');
+                        voteResultsChart = new Chart(ctx, {
+                            type: 'bar',
+                            data: {
+                                labels: candidateNames,
+                                datasets: [{
+                                    label: 'Votes',
+                                    data: voteCounts,
+                                    backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                                    borderColor: 'rgba(54, 162, 235, 1)',
+                                    borderWidth: 1
+                                }]
+                            },
+                            options: {
+                                scales: {
+                                    y: {
+                                        beginAtZero: true,
+                                        ticks: {
+                                            callback: function(value) {
+                                                if (Number.isInteger(value)) {
+                                                    return value;
+                                                }
+                                            },
+                                            stepSize: 1  // 자연수 단위로 표시되도록 설정
+                                        }
+                                    }
+                                }
+                            }
+                        });
+                    } catch (error) {
+                        console.error("Error loading voting results:", error);
+                        alert("투표 결과를 불러오는 중 오류가 발생했습니다.");
+                    }
+                } else {
+                    alert("MetaMask를 사용할 수 없습니다.");
+                }
+            }
+
+            $("#selectSessionForm").submit(function (e) {
+                e.preventDefault();
+                if (selectedSession !== null) {
+                    loadVotingResults(selectedSession);
+                } else {
+                    alert("세션을 선택해주세요.");
+                }
+            });
+
+            loadSessions();
         });
     </script>
 </body>

@@ -29,6 +29,28 @@
             background-color: #007bff;
             border-color: #007bff;
         }
+
+        .login-container .form-control, 
+        .login-container .btn {
+            width: 50%; /* 원하는 너비로 설정 */
+            margin: 0.5rem auto; /* 위아래 margin 설정 */
+            display: block; /* 가운데 정렬을 위해 block으로 변경 */
+            text-align: center; /* 입력 텍스트를 가운데 정렬 */
+        }
+        /* 라벨도 가운데 정렬 */
+        .login-container .form-label {
+            text-align: center;
+            width: 50%;
+            margin: 0.5rem auto;
+            display: block;
+        }
+        .login-container .form-label {
+            text-align: left;
+            width: 50%;
+            margin: 0.5rem auto;
+            display: block;
+        }
+        
     </style>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="./js/userdata.js"></script>
@@ -46,8 +68,9 @@
                 <label for="loginPassword" class="form-label">비밀번호</label>
                 <input type="password" class="form-control" id="loginPassword" required>
             </div>
-            <button type="submit" class="btn btn-success w-100">로그인</button>
-            <button type="button" class="btn btn-secondary w-100 mt-2" id="signupPageButton">회원가입</button>
+            <button type="submit" class="btn btn-success ">로그인</button>
+            <div>   </div>
+            <button type="button" class="btn btn-secondary mt-2" id="signupPageButton">회원가입</button>
         </form>
     </div>
 

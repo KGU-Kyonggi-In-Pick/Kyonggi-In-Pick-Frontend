@@ -32,6 +32,20 @@
             background-color: #007bff;
             border-color: #007bff;
         }
+        .signup-container input.form-control, .signup-container label.form-label {
+            width: 50%; /* 원하는 너비로 설정 */
+            margin: 0 auto; /* 가운데 정렬 */
+            display: block; /* 가운데 정렬을 위해 block으로 변경 */
+            text-align: left; /* 텍스트 가운데 정렬 */
+        }
+        .signup-container label.form-label {
+            margin-bottom: 0.5rem; /* 레이블과 입력 필드 사이의 간격 조정 */
+        }
+        .signup-container .btn {
+            width: 50%; /* 원하는 너비로 설정 */
+            margin: 0 auto; /* 가운데 정렬 */
+            display: block; /* 가운데 정렬을 위해 block으로 변경 */
+        }
     </style>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 </head>
@@ -56,8 +70,8 @@
                 <label for="signupConfirmPassword" class="form-label">비밀번호 확인</label>
                 <input type="password" class="form-control" id="signupConfirmPassword" required>
             </div>
-            <button type="submit" class="btn btn-success w-100">회원가입</button>
-            <button type="button" class="btn btn-secondary w-100 mt-2" id="loginPageButton">이미 회원이신가요? 로그인</button>
+            <button type="submit" class="btn btn-success">회원가입</button>
+            <button type="button" class="btn btn-secondary mt-2" id="loginPageButton">이미 회원이신가요? 로그인</button>
         </form>
     </div>
 

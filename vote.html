@@ -19,24 +19,23 @@
             flex-wrap: wrap;
             justify-content: center;
             gap: 1rem;
-            width: 80%; /* 컨테이너의 너비를 전체 너비의 80%로 설정 */
-            max-width: 1200px; /* 최대 너비를 1200px로 제한 */
-            margin: 0 auto; /* 수평 중앙 정렬 */
+            width: 80%;
+            max-width: 1200px;
+            margin: 0 auto;
         }
         .card {
-            /* flex: 1 1; */
             box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
         }
         .card img {
             width: 100%;
             height: auto;
         }
-        .list-group-item { /* GPT 리스트버튼 수정 */
+        .list-group-item {
             cursor: pointer;
         }
         #sessionList {
-            max-height: 300px; /* 원하는 최대 높이 설정 */
-            overflow-y: auto; /* 세로 스크롤 활성화 */
+            max-height: 300px;
+            overflow-y: auto;
         }
     </style>
 </head>
@@ -48,8 +47,8 @@
                 <div id="sessionList" class="list-group mb-4">
                     <!-- 투표 세션 목록이 여기에 표시됩니다 -->
                 </div>
-                <div class = "text-center">
-                <button type="submit" class="btn btn-outline-info">확인</button>
+                <div class="text-center">
+                    <button type="submit" class="btn btn-outline-info">확인</button>
                 </div>
             </form>
             
@@ -59,8 +58,8 @@
                     <div id="candidateList" class="card-container">
                         <!-- 후보자 목록이 여기에 표시됩니다 -->
                     </div>
-                    <div class = "text-center">
-                    <button type="submit" class="btn btn-outline-info mt-4">투표</button>
+                    <div class="text-center">
+                        <button type="submit" class="btn btn-outline-info mt-4">투표</button>
                     </div>
                 </form>
             </div>
@@ -70,12 +69,6 @@
             </div>
         </div>
         
-        <!-- 그래프 섹션 주석 처리 -->
-        <!--
-        <div class="container mt-5">
-            <canvas id="voteResultsChart"></canvas>
-        </div>
-        -->
         <div class="d-flex justify-content-between mt-4">
             <button id="mainPageButton" class="btn btn-success">메인 페이지로 이동</button>
             <button id="logoutBtn" class="btn btn-danger">로그아웃</button>
@@ -93,7 +86,7 @@
                 return;
             }
 
-            let voteResultsChart;  // 차트 변수
+            let voteResultsChart;
 
             $("#logoutBtn").click(function () {
                 sessionStorage.removeItem("loggedInUser");
@@ -114,11 +107,17 @@
                         const sessionCount = await votingContract.methods.getSessionCount().call();
                         const sessionList = $("#sessionList");
                         sessionList.empty();
-        
+                        const currentTime = Math.floor(Date.now() / 1000);
+
                         for (let i = 0; i < sessionCount; i++) {
                             const session = await votingContract.methods.getSession(i).call();
-                            const sessionItem = `<div class="list-group-item" data-value="${i}">${session[0]}</div>`; // GPT 리스트버튼 수정
-                            sessionList.append(sessionItem);
+                            const startTime = session[2];
+                            const endTime = session[3];
+                            
+                            if (currentTime >= startTime && currentTime <= endTime) {
+                                const sessionItem = `<div class="list-group-item" data-value="${i}">${session[0]}</div>`;
+                                sessionList.append(sessionItem);
+                            }
                         }
 
                         $('.list-group-item').click(function() {
@@ -192,7 +191,7 @@
                         const candidateList = $("#candidateList");
                         candidateList.empty();
 
-                        const imageUrl = "./images/candi.png";  // 후보자 이미지 경로
+                        const imageUrl = "./images/candi.png";
                         for (let i = 0; i < candidateCount; i++) {
                             const candidate = await votingContract.methods.getCandidate(sessionIndex, i).call();
                             const candidateItem = `
@@ -232,45 +231,11 @@
                         for (let i = 0; i < candidateCount; i++) {
                             const candidate = await votingContract.methods.getCandidate(sessionIndex, i).call();
                             candidateNames.push(candidate[0]);
-                            voteCounts.push(Number(candidate[3])); // BigInt 값을 Number로 변환
+                            voteCounts.push(Number(candidate[3]));
                             const resultItem = `<div class="list-group-item"> </div>`;
                             votingResult.append(resultItem);
                         }
 
-                        // 그래프 섹션 주석 처리
-                        // if (voteResultsChart) {
-                        //     voteResultsChart.destroy();
-                        // }
-
-                        // const ctx = document.getElementById('voteResultsChart').getContext('2d');
-                        // voteResultsChart = new Chart(ctx, {
-                        //     type: 'bar',
-                        //     data: {
-                        //         labels: candidateNames,
-                        //         datasets: [{
-                        //             label: 'Votes',
-                        //             data: voteCounts,
-                        //             backgroundColor: 'rgba(54, 162, 235, 0.2)',
-                        //             borderColor: 'rgba(54, 162, 235, 1)',
-                        //             borderWidth: 1
-                        //         }]
-                        //     },
-                        //     options: {
-                        //         scales: {
-                        //             y: {
-                        //                 beginAtZero: true,
-                        //                 ticks: {
-                        //                     callback: function(value) {
-                        //                         if (Number.isInteger(value)) {
-                        //                             return value;
-                        //                         }
-                        //                     },
-                        //                     stepSize: 1  // 자연수 단위로 표시되도록 설정
-                        //                 }
-                        //             }
-                        //         }
-                        //     }
-                        // });
                     } catch (error) {
                         console.error("Error loading voting results:", error);
                         alert("투표 결과를 불러오는 중 오류가 발생했습니다.");
@@ -292,9 +257,20 @@
                         const votingContract = new window.web3.eth.Contract(abiobj, contractAddress);
 
                         try {
+                            // Check if the voting period is active
+                            const session = await votingContract.methods.getSession(selectedSession).call();
+                            const currentTime = Math.floor(Date.now() / 1000);
+                            const startTime = session[2];
+                            const endTime = session[3];
+
+                            if (currentTime < startTime || currentTime > endTime) {
+                                alert("투표 기간이 아닙니다.");
+                                return;
+                            }
+
                             await votingContract.methods.vote(selectedSession, selectedCandidate).send({ from: accounts[0] });
                             alert("투표가 성공적으로 완료되었습니다.");
-                            await loadVotingResults(selectedSession);  // 투표 완료 후 결과 불러오기
+                            await loadVotingResults(selectedSession);
                         } catch (error) {
                             if (error.message.includes("User denied transaction signature")) {
                                 alert("트랜잭션 서명이 거부되었습니다.");
@@ -324,4 +300,3 @@
     </script>
 </body>
 </html>
-

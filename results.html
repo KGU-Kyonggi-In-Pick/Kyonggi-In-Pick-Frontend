@@ -18,12 +18,10 @@
             cursor: pointer;
         }
         .list-group-item.active {
-            background-color:  0 0.125rem 0.25rem rgba(0, 0, 0, 0.075); /* 배경색 */
-            border-color:  0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);    /* 테두리색 */
-            color: white;            /* 텍스트 색상 */
+            color: white;
         }
         #sessionList {
-            max-height: 300px; /* 원하는 최대 높이로 설정하세요 */
+            max-height: 300px;
             overflow-y: auto;
         }
     </style>
@@ -36,8 +34,8 @@
                 <!-- 세션 목록이 여기에 표시됩니다 -->
             </div>
             <div class="text-center">
-            <button type="submit" class="btn btn-outline-info">확인</button>
-        </div>
+                <button type="submit" class="btn btn-outline-info">확인</button>
+            </div>
         </form>
         <canvas id="voteResultsChart"></canvas>
         <div class="d-flex justify-content-between mt-4">
@@ -56,7 +54,7 @@
             }
 
             let selectedSession = null;
-            let voteResultsChart;  // 차트 변수
+            let voteResultsChart;
 
             $("#logoutBtn").click(function () {
                 sessionStorage.removeItem("loggedInUser");
@@ -68,19 +66,23 @@
             });
 
             async function loadSessions() {
+                const currentTime = Math.floor(Date.now() / 1000);
                 if (typeof web3 !== "undefined" && web3.currentProvider.isMetaMask) {
                     const accounts = await ethereum.request({ method: "eth_requestAccounts" });
                     window.web3 = new Web3(window.ethereum);
                     const votingContract = new window.web3.eth.Contract(abiobj, contractAddress);
-        
+
                     try {
                         const sessionCount = await votingContract.methods.getSessionCount().call();
                         const sessionList = $("#sessionList");
                         sessionList.empty();
-        
+
                         for (let i = 0; i < sessionCount; i++) {
                             const session = await votingContract.methods.getSession(i).call();
-                            const sessionItem = `<div class="list-group-item" data-session-index="${i}">${session[0]}</div>`;
+                            const startTime = session[2];
+                            const endTime = session[3];
+
+                            const sessionItem = `<div class="list-group-item" data-session-index="${i}" data-start-time="${startTime}" data-end-time="${endTime}">${session[0]}</div>`;
                             sessionList.append(sessionItem);
                         }
 
@@ -99,6 +101,16 @@
             }
 
             async function loadVotingResults(sessionIndex) {
+                const currentTime = Math.floor(Date.now() / 1000);
+                const sessionElement = $(`.list-group-item[data-session-index="${sessionIndex}"]`);
+                const startTime = parseInt(sessionElement.data('start-time'));
+                const endTime = parseInt(sessionElement.data('end-time'));
+
+                if (currentTime < endTime) {
+                    alert("투표 결과를 확인할 수 없는 기간입니다.");
+                    return;
+                }
+
                 if (typeof web3 !== "undefined" && web3.currentProvider.isMetaMask) {
                     const accounts = await ethereum.request({ method: "eth_requestAccounts" });
                     window.web3 = new Web3(window.ethereum);
@@ -112,10 +124,10 @@
                         for (let i = 0; i < candidateCount; i++) {
                             const candidate = await votingContract.methods.getCandidate(sessionIndex, i).call();
                             candidateNames.push(candidate[0]);
-                            voteCounts.push(Number(candidate[3])); // BigInt 값을 Number로 변환
+                            voteCounts.push(Number(candidate[3])); // Convert BigInt to Number
                         }
 
-                        // 그래프 업데이트
+                        // Update chart
                         if (voteResultsChart) {
                             voteResultsChart.destroy();
                         }
@@ -143,7 +155,7 @@
                                                     return value;
                                                 }
                                             },
-                                            stepSize: 1  // 자연수 단위로 표시되도록 설정
+                                            stepSize: 1  // Set step size to 1 for integer display
                                         }
                                     }
                                 }

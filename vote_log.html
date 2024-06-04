@@ -35,7 +35,14 @@
     </div>
 
     <script>
-        $(document).ready(function () { 
+        $(document).ready(function () {
+            const loggedInUser = JSON.parse(sessionStorage.getItem("loggedInUser"));
+            if (!loggedInUser) {
+                alert("로그인 후 이용해주세요.");
+                window.location.href = "login.html";
+                return;
+            }
+
             if (typeof web3 !== "undefined") {
                 window.web3 = new Web3(window.ethereum);
                 const votingContract = new window.web3.eth.Contract(abiobj, contractAddress);
@@ -43,12 +50,6 @@
                 // Function to mask student ID
                 function maskStudentId(studentId) {
                     return "******" + studentId.slice(-2);
-                }
-
-                // Function to get student ID from wallet address
-                function getStudentIdFromWalletAddress(walletAddress) {
-                    const user = users.find(user => user.walletAddress === walletAddress);
-                    return user ? maskStudentId(user.studentId) : "Unknown";
                 }
 
                 async function loadVoteLog() {
@@ -75,12 +76,14 @@
                                     const votedCandidateIndex = event.returnValues.candidateIndex;
                                     const voteStatus = (votedCandidateIndex == candidateIndex) ? `투표 성공` : "투표 실패";
 
-                                    const studentId = getStudentIdFromWalletAddress(voterAddress);
+                                    // Use the logged-in user's student ID
+                                    const studentId = loggedInUser.studentId;
+                                    const maskedStudentId = maskStudentId(studentId);
 
                                     const voteLogItem = `
                                         <div class="card">
                                             <div class="card-body">
-                                                학번: ${studentId} - ${voteStatus}<br>
+                                                학번: ${maskedStudentId} - ${voteStatus}<br>
                                                 참여한 투표: ${sessionName}
                                             </div>
                                         </div>

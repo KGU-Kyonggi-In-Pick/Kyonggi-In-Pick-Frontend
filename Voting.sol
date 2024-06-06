@@ -131,7 +131,7 @@ contract VotingSystem {
 
         emit UserLoggedIn(_studentId);
     }
-
+ 
     function logout() public  {
         uint studentId = loggedIn[msg.sender];
         loggedIn[msg.sender] = 0;

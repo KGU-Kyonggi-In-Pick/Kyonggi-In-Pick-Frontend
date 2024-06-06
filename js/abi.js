@@ -489,7 +489,7 @@ const abiobj = [
 	   "stateMutability": "view",
 	   "type": "function"
 	}
- ];
+ ]; 
  
  // 컨트랙트 주소
  let contractAddress = "0xc0E852E57647534479Dbfd7c62b7548FF62e2C69";

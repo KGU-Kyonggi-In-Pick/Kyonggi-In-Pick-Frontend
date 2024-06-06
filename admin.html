@@ -80,7 +80,7 @@
                 sessionStorage.removeItem("loggedInUser");
                 window.location.href = "login.html";
             });
-
+        
             $("#addSessionForm").submit(async function (e) {
                 e.preventDefault();
                 const sessionName = $("#sessionName").val();
@@ -97,14 +97,18 @@
                         alert("투표 세션이 성공적으로 추가되었습니다.");
                         loadSessions(); // Reload sessions after adding a new one
                     } catch (error) {
-                        console.error("Error adding session:", error);
-                        alert("투표 세션 추가 중 오류가 발생했습니다.");
+                        if (error.message.includes("User denied transaction signature")) {
+                            alert("사용자가 트랜잭션 서명을 거부했습니다.");
+                        } else {
+                            console.error("Error adding session:", error);
+                            alert("투표 세션 추가 중 오류가 발생했습니다.");
+                        }
                     }
                 } else {
                     alert("MetaMask를 사용할 수 없습니다.");
                 }
             });
-
+        
             $("#addCandidateForm").submit(async function (e) {
                 e.preventDefault();
                 const candidateName = $("#candidateName").val();
@@ -120,9 +124,14 @@
                     try {
                         await votingContract.methods.addCandidate(candidateName, candidateStudentId, candidateDepartment, sessionIndex).send({ from: accounts[0] });
                         alert("후보자가 성공적으로 추가되었습니다.");
+                        loadSessions(); // Reload sessions after adding a new candidate
                     } catch (error) {
-                        console.error("Error adding candidate:", error);
-                        alert("후보자 추가 중 오류가 발생했습니다.");
+                        if (error.message.includes("User denied transaction signature")) {
+                            alert("사용자가 트랜잭션 서명을 거부했습니다.");
+                        } else {
+                            console.error("Error adding candidate:", error);
+                            alert("후보자 추가 중 오류가 발생했습니다.");
+                        }
                     }
                 } else {
                     alert("MetaMask를 사용할 수 없습니다.");
@@ -135,12 +144,12 @@
                     const accounts = await ethereum.request({ method: "eth_requestAccounts" });
                     window.web3 = new Web3(window.ethereum);
                     const votingContract = new window.web3.eth.Contract(abiobj, contractAddress);
-            
+        
                     try {
                         const sessionCount = await votingContract.methods.getSessionCount().call();
                         const sessionList = $("#sessionList");
                         sessionList.empty();
-            
+        
                         for (let i = 0; i < sessionCount; i++) {
                             const session = await votingContract.methods.getSession(i).call();
                             const sessionName = session[0];
@@ -152,7 +161,7 @@
                             const sessionItem = `<div class="list-group-item">Session ${i}: ${sessionName} (Status: ${sessionStatus}, Start: ${new Date(startTime * 1000).toLocaleString()}, End: ${new Date(endTime * 1000).toLocaleString()})</div>`;
                             sessionList.append(sessionItem);
                         }
-            
+        
                         $('.list-group-item').on('click', function () {
                             $('.list-group-item').removeClass('active');
                             $(this).addClass('active');
@@ -166,10 +175,10 @@
                     alert("MetaMask를 사용할 수 없습니다.");
                 }
             }
-            
         
             loadSessions();
         });
+        
     </script>
 </body>
 </html>

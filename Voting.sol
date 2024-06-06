@@ -24,9 +24,6 @@ contract VotingSystem {
         bytes32 passwordHash;
     }
 
-    constructor() {
-        admin = msg.sender;
-    }
     address public admin;
     mapping(uint => VotingSession) public votingSessions;
     uint public votingSessionCount;
@@ -41,9 +38,16 @@ contract VotingSystem {
     event UserLoggedIn(uint studentId);
     event UserLoggedOut(uint studentId);
 
+    constructor() {
+        admin = msg.sender;
+    }
 
-    function createVotingSession(string memory _sessionName, uint _startTime, uint _endTime) public {
-        require(msg.sender == admin, "Only admin can create voting sessions");
+    modifier onlyAdmin() {
+        require(msg.sender == admin, "Only admin can perform this action");
+        _;
+    }
+
+    function createVotingSession(string memory _sessionName, uint _startTime, uint _endTime) public onlyAdmin {
         require(_startTime < _endTime, "Start time must be less than end time");
 
         VotingSession storage newSession = votingSessions[votingSessionCount++];
@@ -55,7 +59,7 @@ contract VotingSystem {
         emit VotingSessionCreated(_sessionName, votingSessionCount - 1, _startTime, _endTime);
     }
 
-    function addCandidate(string memory _name, uint _studentId, string memory _department, uint _sessionIndex) public {
+    function addCandidate(string memory _name, uint _studentId, string memory _department, uint _sessionIndex) public onlyAdmin {
         require(_sessionIndex < votingSessionCount, "Invalid session index");
         VotingSession storage session = votingSessions[_sessionIndex];
         require(session.isActive, "Voting session is not active");
@@ -131,8 +135,8 @@ contract VotingSystem {
 
         emit UserLoggedIn(_studentId);
     }
- 
-    function logout() public  {
+
+    function logout() public {
         uint studentId = loggedIn[msg.sender];
         loggedIn[msg.sender] = 0;
 

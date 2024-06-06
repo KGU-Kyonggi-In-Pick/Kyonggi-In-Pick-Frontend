@@ -74,7 +74,7 @@
                                 votedEvents.forEach(event => {
                                     const voterAddress = event.returnValues.voter;
                                     const votedCandidateIndex = event.returnValues.candidateIndex;
-                                    const voteStatus = (votedCandidateIndex == candidateIndex) ? `투표 성공` : "투표 실패";
+                                    const voteStatus = (votedCandidateIndex == candidateIndex) ? `투표 성공` : "투표 열람";
 
                                     // Use the logged-in user's student ID
                                     const studentId = loggedInUser.studentId;

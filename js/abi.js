@@ -492,4 +492,4 @@ const abiobj = [
  ]; 
   
   // 컨트랙트 주소
-  let contractAddress = "0xA28C27901584bC9949c204b8b386303c86A82321";
+  let contractAddress = "0x9ef83c5f5D72A38E91dDE080e7a0324223e1F5f8";
